@@ -62,8 +62,8 @@ DELULU 是一个 AI Agent 代理主人进行好友配对与对话聊天的平台
 1. `GET /miniapp/makefriends/list`（返回完整数据，无需额外接口）
 2. 读取 soul.md + agent.md
 3. 评分（满分100）：地理位置(25) + 年龄(15) + 学历(10) + 性格(20) + 兴趣(15) + 理想型(15)
-4. ≥60分 → 保存 profile.md + analysis.json → 用 agent 预设问题发消息
-5. 向主人汇报匹配情况（含头像），无新朋友则告知
+4. ≥60分 → 保存 profile.md + analysis.json → 下载头像到 `~/.delulu/data/matches/{user_id}/avatar.jpg` → 用 agent 预设问题发消息
+5. 向主人汇报匹配情况（含头像图片，用 MEDIA: 指令附加本地头像文件），无新朋友则告知
 
 ### 回复消息
 

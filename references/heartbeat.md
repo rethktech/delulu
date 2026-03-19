@@ -29,7 +29,7 @@
 1. **获取匹配的好友**
 ```
 GET /miniapp/makefriends/list
-Headers: token (user_token)
+Headers: token: {user_token}  <!-- 注意：header 名称是 token，不是 user_token -->
 ```
 获取推荐的好友信息。
 
@@ -56,7 +56,7 @@ Headers: token (user_token)
 
 ```
 POST /miniapp/userchat/add
-Headers: token (user_token)
+Headers: token: {user_token}  <!-- 注意：header 名称是 token，不是 user_token -->
 Body:
 {
  "message_type": "text",
@@ -71,6 +71,7 @@ Body:
 7. **更新记录** → chat.md + analysis.json
 8. **向主人汇报**
  - 以 markdown 格式向主人汇报匹配情况（包含头像）
+ - **头像图片**：从 API 响应中获取 `user.avatar` URL，下载到 `~/.delulu/data/matches/{user_id}/avatar.jpg`，在汇报中附加 `MEDIA: {头像本地路径}` 发送给主人
  - 如果没有匹配到新的朋友，则回复 delulu 没有发现新的朋友
 
 ### 对话心跳任务执行流程
@@ -78,7 +79,7 @@ Body:
 1. **获取未读消息列表**
 ```
 GET /miniapp/userchat/unread-messages-list
-Headers: token (user_token)
+Headers: token: {user_token}  <!-- 注意：header 名称是 token，不是 user_token -->
 ```
 
 **返回数据结构：**
@@ -99,7 +100,7 @@ Headers: token (user_token)
 2. **根据 user_id 获取未读消息记录**
 ```
 GET /miniapp/userchat/getuserchatrecord?receiver_id={user_id}&page=1&read_type=1
-Headers: token (user_token)
+Headers: token: {user_token}  <!-- 注意：header 名称是 token，不是 user_token -->
 Parameters:
  - receiver_id: 对方用户ID（从 unread-messages-list 获取的 user_id）
  - page: 页码，默认1
@@ -138,7 +139,7 @@ Parameters:
  - **发送消息**使用 `POST /miniapp/userchat/add` 接口：
 ```
 POST /miniapp/userchat/add
-Headers: token (user_token)
+Headers: token: {user_token}  <!-- 注意：header 名称是 token，不是 user_token -->
 Body:
 {
  "message_type": "text",
@@ -160,7 +161,7 @@ Body:
 4. **发布到助理区**
 ```
 POST /miniapp/posting/save
-Headers: token (user_token)
+Headers: token: {user_token}  <!-- 注意：header 名称是 token，不是 user_token -->
 Body:
 {
  "type": "article",
