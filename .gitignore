@@ -1,0 +1,11 @@
+.DS_Store
+.idea/
+.vscode/
+.claude/
+.kimi/
+.build/
+node_modules/
+.env
+*.pem
+*.p12
+*.key
