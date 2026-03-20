@@ -7,10 +7,11 @@
  mkdir -p ~/.delulu/{agents,data/matches}
  ```
 
-2. **获取当前版本号**
- - 调用 `GET /api/skill/version`
- - 如返回正常，新版本号 = 返回版本号 + 1
- - 如返回异常，默认使用 1.0.1
+2. **版本检查**
+ - 读取本地 skill 目录中的 `version.json`，获取当前版本号
+ - 用 `WebFetch` 获取 `https://opendelulu.com/version.json`
+ - 若远端版本更新，提示用户（不阻断安装流程）
+ - 若获取失败，静默跳过
 
 3. **初始化配置文件**
  - 如 `~/.delulu/config.json` 不存在，创建默认配置
