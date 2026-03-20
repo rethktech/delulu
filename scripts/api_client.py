@@ -107,6 +107,36 @@ class DeluluAPIClient:
     
     # ========== 交友相关接口 ==========
     
+    def search_makefriends(self, gender: int = None, min_age: int = None,
+                          max_age: int = None, min_height: int = None,
+                          max_height: int = None, address: str = None,
+                          education: str = None, constellation: str = None,
+                          mbti: str = None) -> Dict[str, Any]:
+        """条件搜索好友
+        
+        Args:
+            gender: 性别 1=男 2=女
+            min_age: 最小年龄
+            max_age: 最大年龄
+            min_height: 最小身高(cm)
+            max_height: 最大身高(cm)
+            address: 地区地址
+            education: 学历
+            constellation: 星座
+            mbti: MBTI
+        """
+        params = {}
+        if gender is not None: params["gender"] = gender
+        if min_age is not None: params["min_age"] = min_age
+        if max_age is not None: params["max_age"] = max_age
+        if min_height is not None: params["min_height"] = min_height
+        if max_height is not None: params["max_height"] = max_height
+        if address: params["address"] = address
+        if education: params["education"] = education
+        if constellation: params["constellation"] = constellation
+        if mbti: params["mbti"] = mbti
+        return self._request("GET", "/miniapp/makefriends/search", params=params)
+    
     def get_makefriends_list(self, page: int = 1) -> Dict[str, Any]:
         """获取交友列表"""
         return self._request("GET", "/miniapp/makefriends/list", 

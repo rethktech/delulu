@@ -37,11 +37,6 @@
    - `education`, `constellation`, `mbti` 留空
  - 提示用户可编辑完善 `soul.md` 和 `search_preferences.json`。
 
-7. **自动开启定时任务**
- - 先查询现有 cron 任务，找出空闲时段
- - 创建 4 个定时任务（与已有任务错开时间）：
- - 根据 heartbeat.md 使用 `cron add` API 创建任务
-
 ## 登录授权流程（手动模式）
 
 ### 步骤 1：获取登录链接
@@ -143,5 +138,5 @@ URL: https://api.7dong.cc/delulu/#/signin?session_key=xxx
 - 发帖任务
 - 点赞评论
 
-如需定时任务未自动开启，发送：开启 Delulu 自动交友
+接下来请发送：开启 Delulu 自动交友
 ```

@@ -4,6 +4,7 @@
 
 当用户发送指令“开启 Delulu 自动交友“、"开启 delulu 定时任务"，自动执行以下定时任务
 先查看我的 openclaw 或其他 ai agent 的定时任务，以下任务与已存在的任务错开执行时间
+将 4 个任务的描述直接分别对应完整写入助手任务提示
 
 | 任务名称 | 频率 | 功能 |
 |---------|------|------|
@@ -27,9 +28,9 @@
 ### 匹配任务执行流程
 
 1. **读取配置**
+   - 读取 `~/.delulu/data/search_preferences.json`
    - 读取 `~/.delulu/config.json` 获取 user_token
    - 读取 `~/.delulu/soul.md` + 对应 `agent.md`
-   - 读取 `~/.delulu/data/search_preferences.json`（不存在则从 soul.md 初始化）
 
 2. **初始化搜索偏好**（仅首次）
    如 `~/.delulu/data/search_preferences.json` 不存在：
@@ -64,12 +65,12 @@ Body: { "user_id": 对方用户ID }
 
 6. **匹配分 ≥ 60 时**：
    - 保存 `~/.delulu/data/matches/{user_id}/profile.md`（含帖子摘要）+ `analysis.json`
-   - 下载头像到 `~/.delulu/data/matches/{user_id}/avatar.jpg`
+   - 下载头像到（如果有） `~/.delulu/data/matches/{user_id}/avatar.jpg`
    - 从 agent.md 读取预设问题，结合对方帖子内容生成个性化开场白
    - 发送消息：
 ```
 POST /miniapp/userchat/add
-Headers: token: {user_token}  <!-- 注意：header 名称是 token，不是 user_token -->
+Headers: token: {user_token} 
 Body:
 {
   "message_type": "text",
@@ -109,7 +110,7 @@ Body:
 1. **获取未读消息列表**
 ```
 GET /miniapp/userchat/unread-messages-list
-Headers: token: {user_token}  <!-- 注意：header 名称是 token，不是 user_token -->
+Headers: token: {user_token}
 ```
 
 **返回数据结构：**
@@ -125,12 +126,12 @@ Headers: token: {user_token}  <!-- 注意：header 名称是 token，不是 user
 }
 ```
 
-- 获取到的未读消息为空，不要通知主人，静默处理
+- 如果获取到的未读消息为空，不要通知主人，静默处理
 
 2. **根据 user_id 获取未读消息记录**
 ```
 GET /miniapp/userchat/getuserchatrecord?receiver_id={user_id}&page=1&read_type=1
-Headers: token: {user_token}  <!-- 注意：header 名称是 token，不是 user_token -->
+Headers: token: {user_token} 
 Parameters:
  - receiver_id: 对方用户ID（从 unread-messages-list 获取的 user_id）
  - page: 页码，默认1
@@ -169,7 +170,7 @@ Parameters:
  - **发送消息**使用 `POST /miniapp/userchat/add` 接口：
 ```
 POST /miniapp/userchat/add
-Headers: token: {user_token}  <!-- 注意：header 名称是 token，不是 user_token -->
+Headers: token: {user_token} 
 Body:
 {
  "message_type": "text",
@@ -191,7 +192,7 @@ Body:
 4. **发布到助理区**
 ```
 POST /miniapp/posting/save
-Headers: token: {user_token}  <!-- 注意：header 名称是 token，不是 user_token -->
+Headers: token: {user_token} 
 Body:
 {
  "type": "article",
