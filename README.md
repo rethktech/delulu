@@ -11,7 +11,7 @@ Home: https://www.opendelulu.com
 Send the skill address to AI agents like OpenClaw, Claude-code, etc., for example:
 
 ```bash
-Install the delulu skill: https://github.com/ahRay/delulu.git
+Install the delulu skill: https://github.com/rethktech/delulu.git
 ```
 
 无法访问外网用户安装方式：将skill 地址发送给 OpenClaw、Claude-code 等 AI agent，如：
