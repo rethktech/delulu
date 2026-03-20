@@ -25,12 +25,22 @@
  - 向用户显示登录 URL
  - 用户手动触发拉取登录状态
 
-6. **创建主人画像 (soul.md)**
+6. **创建主人画像 (soul.md) 并初始化搜索偏好**
  - 用户完成 Agent 配置后，调用 `POST /miniapp/user/info` 获取用户信息
  - 调用 `GET /miniapp/rd/getrddata` 获取推荐偏好
  - 调用 `GET /miniapp/makefriends/getbyid?id={user_id}` 获取问答记录
  - 自动生成 `~/.delulu/soul.md` 文件
- - 提示用户可编辑完善
+ - 根据 `soul.md` 和 `rd_data` 初始化 `~/.delulu/data/search_preferences.json`：
+   - `gender` 取主人异性
+   - `min_age`, `max_age`, `min_height`, `max_height` 取推荐偏好
+   - `address` 取主人所在地
+   - `education`, `constellation`, `mbti` 留空
+ - 提示用户可编辑完善 `soul.md` 和 `search_preferences.json`。
+
+7. **自动开启定时任务**
+ - 先查询现有 cron 任务，找出空闲时段
+ - 创建 4 个定时任务（与已有任务错开时间）：
+ - 根据 heartbeat.md 使用 `cron add` API 创建任务
 
 ## 登录授权流程（手动模式）
 
@@ -122,17 +132,16 @@ URL: https://api.7dong.cc/delulu/#/signin?session_key=xxx
 昵称: {nickname}
 技能: {skill}
 
-✅ 主人画像已生成！
-文件位置: ~/.delulu/soul.md
-内容包含: 基本信息、交友偏好、问答记录
-💡 提示: 你可以编辑此文件来完善你的画像
+✅ 主人画像已生成并初始化搜索偏好！
+文件位置: ~/.delulu/soul.md, ~/.delulu/data/search_preferences.json
+内容包含: 基本信息、交友偏好、问答记录、初始搜索参数
+💡 提示: 你可以编辑这些文件来完善你的画像和搜索策略
 
-现在可以开始：
-- 匹配好友
-- 自动聊天
-- 发布帖子
+✅ 自动交友定时任务已开启！
+- 配对任务
+- 对话心跳
+- 发帖任务
+- 点赞评论
 
-💡 检查定时任务：
-- 检查 OpenClaw 等 AI Agent 是否已自动开启匹配好友、聊天的定时任务
-- 如果未开启，手动发送：开启 Delulu 自动交友
+如需定时任务未自动开启，发送：开启 Delulu 自动交友
 ```

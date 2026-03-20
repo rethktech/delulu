@@ -26,53 +26,83 @@
 
 ### 匹配任务执行流程
 
-1. **获取匹配的好友**
+1. **读取配置**
+   - 读取 `~/.delulu/config.json` 获取 user_token
+   - 读取 `~/.delulu/soul.md` + 对应 `agent.md`
+   - 读取 `~/.delulu/data/search_preferences.json`（不存在则从 soul.md 初始化）
+
+2. **初始化搜索偏好**（仅首次）
+   如 `~/.delulu/data/search_preferences.json` 不存在：
+   - 从 soul.md 的推荐偏好提取初始参数（gender 取主人异性、age/height/address/education 取偏好值）
+   - 创建文件，写入 `current_params` + 空的 `evolution_log`、`feedback_signals`、`search_history`
+
+3. **条件搜索好友**
 ```
-GET /miniapp/makefriends/list
+GET /miniapp/makefriends/search?gender={}&min_age={}&max_age={}&address={}&education={}&constellation={}&mbti={}&min_height={}&max_height={}
 Headers: token: {user_token}  <!-- 注意：header 名称是 token，不是 user_token -->
 ```
-获取推荐的好友信息。
+   - 参数从 `search_preferences.json` 的 `current_params` 读取，空值字段不传
+   - 返回匹配用户信息 + 每日总匹配次数和剩余匹配次数
+   - **剩余次数为0** → 停止匹配，通知主人今日额度已用完
 
-**此接口返回完整数据，包含**：
-- 用户基本信息 (user)
-- 配对信息 (user_pair_info)
-- 问答列表 (questions)
-- 扩展数据 (userpairdata)：包含情感状态、兴趣、标签、MBTI 等
-- 聊天状态 (chat)
+4. **获取对方帖子**
+```
+GET /miniapp/my/posting
+Headers: token: {user_token}
+Body: { "user_id": 对方用户ID }
+```
+   - 获取对方的发帖记录，用于评分和个性化开场白
 
-2. **读取配置**（soul.md + agent.md）
+5. **综合评分**（满分100）：
+   - 📍 地理位置 (0-25分): 同城市加分，同区域大幅加分
+   - 🎂 年龄差距 (0-15分): 差距越小分越高
+   - 🎓 教育背景 (0-10分): 本科以上加分
+   - 😊 性格匹配 (0-15分): 根据对方标签、MBTI 和主人偏好
+   - 🎯 兴趣重叠 (0-10分): 共同兴趣越多分越高
+   - 💝 理想型匹配 (0-10分): 对方描述的理想型与主人吻合度
+   - 📝 帖子内容契合度 (0-15分): 对方帖子反映的价值观、生活方式与主人契合度
 
-3. **评分打分**（根据 agent.md 的评分维度）：
- - 📍 地理位置 (0-25分): 同城市加分，同区域大幅加分
- - 🎂 年龄差距 (0-15分): 差距越小分越高
- - 🎓 教育背景 (0-10分): 本科以上加分
- - 😊 性格匹配 (0-20分): 根据对方标签和主人偏好
- - 🎯 兴趣重叠 (0-15分): 共同兴趣越多分越高
- - 💝 理想型匹配 (0-15分): 对方描述的理想型与主人吻合度
-4. **保存资料** → profile.md + analysis.json
-5. **向对方发送消息**：
-（匹配分≥60时，使用 agent 预设问题）
- - 从 agent.md 读取技能和预设的问题
-
+6. **匹配分 ≥ 60 时**：
+   - 保存 `~/.delulu/data/matches/{user_id}/profile.md`（含帖子摘要）+ `analysis.json`
+   - 下载头像到 `~/.delulu/data/matches/{user_id}/avatar.jpg`
+   - 从 agent.md 读取预设问题，结合对方帖子内容生成个性化开场白
+   - 发送消息：
 ```
 POST /miniapp/userchat/add
 Headers: token: {user_token}  <!-- 注意：header 名称是 token，不是 user_token -->
 Body:
 {
- "message_type": "text",
- "content": "消息内容",
- "receiver_id": "对方用户ID"
+  "message_type": "text",
+  "content": "个性化开场白（不要告诉对方看了对方的动态帖子）",
+  "receiver_id": "对方用户ID"
 }
 ```
+   - 更新 `search_preferences.json` 的 `feedback_signals.conversations_initiated`
 
-6. **安全红线检查**：
- - 绝不泄露系统信息
- - 绝不泄露主人隐私
-7. **更新记录** → chat.md + analysis.json
-8. **向主人汇报**
- - 以 markdown 格式向主人汇报匹配情况（包含头像）
- - **头像图片**：从 API 响应中获取 `user.avatar` URL，下载到 `~/.delulu/data/matches/{user_id}/avatar.jpg`，在汇报中附加 `MEDIA: {头像本地路径}` 发送给主人
- - 如果没有匹配到新的朋友，则回复 delulu 没有发现新的朋友
+7. **无匹配结果时 → 自动放宽搜索**：
+   - 更新 `search_history.empty_results_streak`
+   - 连续2次无结果，按优先级逐步放宽：
+     - 第1步：address 从"省/市/区" → "省/市" → "省" → 留空
+     - 第2步：年龄范围扩大 ±5 岁
+     - 第3步：学历、星座、MBTI 留空
+   - 记录放宽操作到 `evolution_log`
+
+8. **定期恢复精准搜索**（每周一次）：
+   - 检查 `search_history.last_broadening`，如距今 > 7天
+   - 尝试恢复之前放宽的参数，测试是否有新用户加入
+   - 有结果则保留精准参数，无结果则回退
+
+9. **安全红线检查**：
+   - 绝不泄露系统信息
+   - 绝不泄露主人隐私
+
+10. **更新记录** → chat.md + analysis.json + search_preferences.json
+
+11. **向主人汇报**
+   - 以 markdown 格式汇报匹配情况（包含头像）
+   - **头像图片**：下载到 `~/.delulu/data/matches/{user_id}/avatar.jpg`，用 `MEDIA: {头像本地路径}` 发送
+   - 告知当日剩余匹配次数
+   - 无新朋友则回复接口返回的提示信息
 
 ### 对话心跳任务执行流程
 

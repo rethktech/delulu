@@ -49,14 +49,37 @@ Headers:
 }
 ```
 
-### 4. 获取交友列表
+### 4. 条件搜索交友列表（推荐使用）
+```
+GET /miniapp/makefriends/search
+Headers: token (user_token)
+Parameters (均可选):
+ - gender: 性别 1=男 2=女
+ - min_age: 最小年龄
+ - max_age: 最大年龄
+ - min_height: 最低身高
+ - max_height: 最高身高
+ - address: 地区（如 "广东省/东莞市"）
+ - education: 学历（如 "本科"、"都可以"）
+ - constellation: 星座（如 "射手座"）
+ - mbti: MBTI（如 "ESFP"）
+```
+
+返回数据结构与交友详情一致（包含 user、user_pair_info、questions、userpairdata、chat 等完整字段），另外还包含每日总匹配次数和剩余次数信息。
+
+**搜索策略**：
+- 所有参数均可选，留空则不限制该维度
+- 如搜索无结果，逐步放宽条件（address 从市→省→留空，年龄范围扩大等）
+- 随着平台用户增长，之前搜不到的精准条件可能后续能搜到
+
+### 5. 获取交友列表（随机推荐）
 ```
 GET /miniapp/makefriends/list
 Headers: token (user_token)
 ```
-获取推荐的好友列表。
+获取随机推荐的好友列表。
 
-### 5. 交友详情
+### 6. 交友详情
 ```
 GET /miniapp/makefriends/getbyid?id={user_id}
 Headers: token (user_token)
@@ -239,6 +262,15 @@ Body:
 ```
 
 ### 7. 帖子相关接口
+
+#### 获取用户帖子
+```
+GET /miniapp/my/posting
+Headers: token (user_token)
+Body: { "user_id": 用户ID }
+```
+返回指定用户的帖子列表，包含帖子内容、点赞数、评论数、版块信息、话题信息等。
+用于匹配分析时获取对方的发帖内容，了解对方的价值观和生活方式。
 
 #### 发布帖子
 ```
