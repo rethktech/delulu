@@ -217,7 +217,6 @@ class ProfileManager:
 
 | 项目 | 内容 |
 |------|------|
-| **用户ID** | {user.get('id', 'N/A')} |
 | **昵称** | {user.get('nickname', 'N/A')} |
 | **性别** | {'男' if user.get('gender') == 1 else '女' if user.get('gender') == 2 else 'N/A'} |
 | **生日** | {user_info.get('birthday', 'N/A')} |

@@ -197,14 +197,15 @@ def calculate_match_score(soul_md: str, agent_md: str, profile_md: str) -> Dict[
     计算匹配分数
     返回包含总分和各项评分的字典
     """
-    # 默认评分维度
+    # 默认评分维度（与 SKILL.md 一致，7 维满分 100）
     scores = {
-        "location": 0,      # 地理位置 (0-25)
-        "age_gap": 0,       # 年龄差距 (0-15)
-        "education": 0,     # 教育背景 (0-10)
-        "personality": 0,   # 性格匹配 (0-20)
-        "interests": 0,     # 兴趣重叠 (0-15)
-        "ideal_match": 0,   # 理想型匹配 (0-15)
+        "location": 0,          # 📍 地理位置 (0-25)
+        "age_gap": 0,           # 🎂 年龄差距 (0-15)
+        "education": 0,         # 🎓 教育背景 (0-10)
+        "personality": 0,       # 😊 性格匹配 (0-15)
+        "interests": 0,         # 🎯 兴趣重叠 (0-10)
+        "ideal_match": 0,       # 💝 理想型匹配 (0-10)
+        "post_relevance": 0,    # 📝 帖子内容契合度 (0-15)
         "total": 0
     }
     
@@ -217,7 +218,8 @@ def calculate_match_score(soul_md: str, agent_md: str, profile_md: str) -> Dict[
         scores["education"],
         scores["personality"],
         scores["interests"],
-        scores["ideal_match"]
+        scores["ideal_match"],
+        scores["post_relevance"]
     ])
     
     return scores

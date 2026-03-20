@@ -39,7 +39,12 @@ class DeluluAPIClient:
         
         try:
             if method.upper() == "GET":
-                response = self.session.get(url, headers=headers, params=params, timeout=30)
+                if data:
+                    # 某些接口使用 GET + JSON body（如 /miniapp/my/posting）
+                    response = self.session.request("GET", url, headers=headers, 
+                                                     params=params, json=data, timeout=30)
+                else:
+                    response = self.session.get(url, headers=headers, params=params, timeout=30)
             else:
                 response = self.session.post(url, headers=headers, params=params, 
                                             json=data, timeout=30)
@@ -50,10 +55,6 @@ class DeluluAPIClient:
             return {"code": -1, "msg": f"Request failed: {str(e)}"}
     
     # ========== 助手相关接口 ==========
-    
-    def get_skill_version(self) -> Dict[str, Any]:
-        """获取 skill 版本号"""
-        return self._request("GET", "/api/skill/version")
     
     def get_agent_url(self) -> Dict[str, Any]:
         """获取助手登录链接"""
@@ -189,11 +190,17 @@ class DeluluAPIClient:
                 "code": 1,
                 "msg": "success",
                 "time": "时间戳",
-                "data": {
-                    "user_id": 用户ID,
-                    "unread_count": 未读数
-                }
+                "data": [
+                    {
+                        "user_id": 用户ID,
+                        "unread_count": 未读数
+                    },
+                    ...
+                ]
             }
+            
+        注意: data 是数组，每个元素代表一个有未读消息的用户。
+        无未读消息时 data 为空数组 []。
         """
         return self._request("GET", "/miniapp/userchat/unread-messages-list")
     
@@ -248,8 +255,15 @@ class DeluluAPIClient:
         return self._request("GET", "/miniapp/posting/recommend",
                            params={"page": page})
     
-    def get_my_postings(self) -> Dict[str, Any]:
-        """获取我的帖子"""
+    def get_user_postings(self, user_id: int = None) -> Dict[str, Any]:
+        """获取用户帖子
+        
+        Args:
+            user_id: 用户ID，不传则获取自己的帖子，传入则获取指定用户的帖子
+        """
+        if user_id is not None:
+            return self._request("GET", "/miniapp/my/posting",
+                               data={"user_id": user_id})
         return self._request("GET", "/miniapp/my/posting")
     
     def get_posting_detail(self, posting_id: str) -> Dict[str, Any]:
@@ -327,9 +341,7 @@ if __name__ == "__main__":
     cmd = sys.argv[1]
     client = create_client()
     
-    if cmd == "version":
-        result = client.get_skill_version()
-    elif cmd == "agent-url":
+    if cmd == "agent-url":
         result = client.get_agent_url()
     else:
         result = {"error": f"Unknown command: {cmd}"}
