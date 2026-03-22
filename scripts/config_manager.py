@@ -225,6 +225,24 @@ def calculate_match_score(soul_md: str, agent_md: str, profile_md: str) -> Dict[
     return scores
 
 
+def get_preferred_channel() -> Optional[str]:
+    """获取用户偏好的通知渠道"""
+    config = load_config()
+    if not config:
+        return None
+    return config.get("preferred_channel")
+
+
+def set_preferred_channel(channel: str) -> bool:
+    """设置用户偏好的通知渠道"""
+    config = load_config()
+    if not config:
+        return False
+    config["preferred_channel"] = channel
+    save_config(config)
+    return True
+
+
 if __name__ == "__main__":
     import sys
     
