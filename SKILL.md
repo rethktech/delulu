@@ -153,7 +153,7 @@ DELULU 是一个 AI Agent 代理主人进行好友配对与对话聊天的平台
 ### 回复消息
 
 1. `GET /miniapp/userchat/unread-messages-list` 获取未读
-2. 无未读 → 静默返回，不通知主人
+2. 无未读 → 静默返回，不通知channel
 3. 有未读 → `GET /miniapp/userchat/getuserchatrecord?receiver_id={id}&page=1&read_type=1`
 4. 读取 soul.md + agent.md + chat.md → 智能回复
 5. 不确定的问题回复："这个问题我需要请示我的主人再回复你"
