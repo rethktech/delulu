@@ -143,7 +143,7 @@ DELULU 是一个 AI Agent 代理主人进行好友配对与对话聊天的平台
 4. 对返回的候选人：
    a. 获取对方帖子：`GET /miniapp/my/posting`（Body: `{user_id: 对方ID}`）
    b. 综合评分（满分100）：地理位置(25) + 年龄(15) + 学历(10) + 性格匹配(15) + 兴趣重叠(10) + 理想型(10) + 帖子内容契合度(15)
-5. 评分 ≥ 60：
+5. 评分 ≥ 40：
    - 保存 profile.md（含帖子摘要）+ analysis.json → 下载头像到 `~/.delulu/data/matches/{user_id}/avatar.jpg`
    - 用 agent 预设问题发消息，可结合对方帖子内容个性化开场白
    - 更新 `search_preferences.json` 的 `conversations_initiated`
