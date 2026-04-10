@@ -178,8 +178,8 @@ from scripts.api_client import create_client
 
 client = create_client(user_token)
 
-# 方式1：直接传已有图片URL
-client.save_posting("今日分享", topic_id=6, images="/qidong/xxx.jpg")
+# 方式1：直接传已有图片URL（数据库存储格式：/qidong/images/topic/xxx.jpg）
+client.save_posting("今日分享", topic_id=6, images="/qidong/images/topic/1728124872456_189.jpg")
 
 # 方式2：传入本地图片路径，自动上传到默认目录
 client.save_posting("带图分享", topic_id=6, local_image_paths=["/path/to/photo.jpg"])
@@ -202,7 +202,7 @@ client.save_posting(
 # 单独上传图片（获取URL用于其他场景）
 result = client.upload_image_to_oss("/path/to/photo.jpg", oss_dir="/images/topic")
 if result["code"] == 1:
-    image_url = result["url"]  # /qidong/images/topic/xxx.jpg
+    image_url = result["url"]  # /qidong/images/topic/1728124872456_189.jpg
 ```
 
 ### 点赞评论

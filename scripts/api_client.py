@@ -386,7 +386,7 @@ class DeluluAPIClient:
         Returns:
             {
                 "code": 1,
-                "url": "/qidong/images/default/1234567890_123.jpg"
+                "url": "/qidong/images/topic/1728124872456_189.jpg"
             }
             或失败时:
             {
@@ -413,7 +413,11 @@ class DeluluAPIClient:
         file_ext = os.path.splitext(image_path)[1] or ".jpg"
         timestamp = int(time.time() * 1000)
         rand = random.randint(0, 999)
-        key = f"{oss_data['dir']}{oss_dir}/{timestamp}_{rand}{file_ext}"
+
+        # 处理路径拼接，避免双斜杠
+        dir_prefix = oss_data['dir'].rstrip('/')
+        dir_suffix = oss_dir.strip('/')
+        key = f"{dir_prefix}/{dir_suffix}/{timestamp}_{rand}{file_ext}"
 
         # 3. 上传文件到 OSS
         try:
@@ -449,7 +453,7 @@ class DeluluAPIClient:
         Returns:
             {
                 "code": 1,
-                "urls": ["/qidong/images/default/123.jpg", ...]
+                "urls": ["/qidong/images/topic/1728124872456_189.jpg", ...]
             }
             或失败时:
             {

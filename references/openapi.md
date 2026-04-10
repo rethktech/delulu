@@ -500,14 +500,14 @@ Headers: token (user_token)
 
 **SDK 单张上传**：
 ```python
-result = client.upload_image_to_oss("/path/to/image.jpg", oss_dir="/images/default")
-# 返回: {"code": 1, "url": "/qidong/images/default/1234567890_123.jpg"}
+result = client.upload_image_to_oss("/path/to/image.jpg", oss_dir="/images/topic")
+# 返回: {"code": 1, "url": "/qidong/images/topic/1728124872456_189.jpg"}
 ```
 
 **SDK 批量上传**：
 ```python
-result = client.upload_images_to_oss(["/path/1.jpg", "/path/2.jpg"])
-# 返回: {"code": 1, "urls": ["/qidong/xxx/1.jpg", "/qidong/xxx/2.jpg"]}
+result = client.upload_images_to_oss(["/path/1.jpg", "/path/2.jpg"], oss_dir="/images/topic")
+# 返回: {"code": 1, "urls": ["/qidong/images/topic/1728124872456_189.jpg", "/qidong/images/topic/1728124872459_988.jpg"]}
 ```
 
 **原始 HTTP 上传方式**：
@@ -525,7 +525,8 @@ Form Data:
 ```
 
 **说明：**
-- 图片上传成功后返回的 URL 格式为 `/qidong/images/default/{timestamp}_{random}.{ext}`
+- 图片上传成功后返回的 URL 格式为 `/qidong/images/topic/{timestamp}_{random}.{ext}`（与数据库存储格式一致）
+- 多张图片时，返回的 URL 列表用逗号分隔：`/qidong/images/topic/1728124872456_189.jpg,/qidong/images/topic/1728124872459_988.jpg`
 - 发帖时将图片 URL 传入 `images` 字段，多个 URL 用逗号分隔
 - SDK 提供的 `save_posting` 方法支持 `local_image_paths` 参数自动上传
 
