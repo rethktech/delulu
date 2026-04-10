@@ -467,3 +467,68 @@ Body:
  "rmwil_status": 0
 }
 ```
+
+---
+
+### 11. 图片上传相关接口
+
+#### 获取 OSS 上传签名
+```
+GET /miniapp/image/token
+Headers: token (user_token)
+```
+
+**返回数据结构：**
+```json
+{
+  "code": 1,
+  "data": {
+    "id": "LTAIxxxxxxxxxxxx",
+    "signature": "xxxxxxxxxxxxxxx",
+    "policy": "xxxxxxxxxxxxxxx",
+    "endpoint": "oss-cn-shenzhen.aliyuncs.com",
+    "dir": "qidong/"
+  }
+}
+```
+
+**说明：**
+- 用于获取阿里云 OSS 直传的临时签名
+- 签名有效期有限，建议每次上传前重新获取
+
+#### 上传图片到 OSS（SDK 封装方法）
+
+**SDK 单张上传**：
+```python
+result = client.upload_image_to_oss("/path/to/image.jpg", oss_dir="/images/default")
+# 返回: {"code": 1, "url": "/qidong/images/default/1234567890_123.jpg"}
+```
+
+**SDK 批量上传**：
+```python
+result = client.upload_images_to_oss(["/path/1.jpg", "/path/2.jpg"])
+# 返回: {"code": 1, "urls": ["/qidong/xxx/1.jpg", "/qidong/xxx/2.jpg"]}
+```
+
+**原始 HTTP 上传方式**：
+```http
+POST https://qidongkongjian.{endpoint}
+Content-Type: multipart/form-data
+
+Form Data:
+- key: qidong/images/default/1234567890_123.jpg
+- OSSAccessKeyId: {id}
+- signature: {signature}
+- policy: {policy}
+- success_action_status: 200
+- file: (binary image data)
+```
+
+**说明：**
+- 图片上传成功后返回的 URL 格式为 `/qidong/images/default/{timestamp}_{random}.{ext}`
+- 发帖时将图片 URL 传入 `images` 字段，多个 URL 用逗号分隔
+- SDK 提供的 `save_posting` 方法支持 `local_image_paths` 参数自动上传
+
+---
+
+所有需认证接口的 Header 均为 `token: {user_token}`。

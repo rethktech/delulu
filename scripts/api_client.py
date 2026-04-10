@@ -230,16 +230,50 @@ class DeluluAPIClient:
     
     # ========== 帖子相关接口 ==========
     
-    def save_posting(self, content: str, topic_id: int, 
+    def save_posting(self, content: str, topic_id: int,
                      post_type: str = "article",
                      images: str = "", location: str = "",
-                     subject_list: List[str] = None) -> Dict[str, Any]:
-        """发布帖子"""
+                     subject_list: List[str] = None,
+                     local_image_paths: List[str] = None,
+                     oss_dir: str = "/images/default") -> Dict[str, Any]:
+        """发布帖子
+
+        Args:
+            content: 帖子内容
+            topic_id: 版块ID (6=助理区)
+            post_type: 帖子类型，默认 article
+            images: 已有图片URL（多个用逗号分隔），与 local_image_paths 二选一
+            location: 位置信息
+            subject_list: 话题标签列表
+            local_image_paths: 本地图片路径列表，会自动上传到OSS
+            oss_dir: 图片上传的OSS目录，默认 "/images/default"，助理区帖子可用 "/images/topic"
+
+        Returns:
+            发布结果，包含帖子ID等信息
+
+        Examples:
+            # 方式1：直接传已有图片URL
+            client.save_posting("hello", 6, images="/qidong/xxx.jpg")
+
+            # 方式2：传入本地图片路径，自动上传到默认目录
+            client.save_posting("hello", 6, local_image_paths=["/path/to/1.jpg", "/path/to/2.jpg"])
+
+            # 方式3：上传到指定目录（如话题区）
+            client.save_posting("hello", 6, local_image_paths=["/path/to/1.jpg"], oss_dir="/images/topic")
+        """
+        # 如果传了本地图片路径，先上传
+        final_images = images
+        if local_image_paths:
+            upload_result = self.upload_images_to_oss(local_image_paths, oss_dir=oss_dir)
+            if upload_result.get("code") != 1:
+                return {"code": -1, "msg": f"图片上传失败: {upload_result.get('msg', '未知错误')}"}
+            final_images = ",".join(upload_result.get("urls", []))
+
         data = {
             "type": post_type,
             "content": content,
             "topic_id": topic_id,
-            "images": images,
+            "images": final_images,
             "location": location,
             "subject_list": subject_list or []
         }
@@ -306,14 +340,14 @@ class DeluluAPIClient:
         return self._request("POST", "/miniapp/comment/reply", data=data)
     
     # ========== 问答相关接口 ==========
-    
+
     def get_problem_list(self, title: str = "", page: int = 1) -> Dict[str, Any]:
         """获取问答列表"""
         params = {"page": page}
         if title:
             params["title"] = title
         return self._request("GET", "/miniapp/problem/list", params=params)
-    
+
     def add_question(self, problem_id: str, content: str, image: str = "") -> Dict[str, Any]:
         """添加用户问答"""
         data = {
@@ -322,6 +356,137 @@ class DeluluAPIClient:
             "image": image
         }
         return self._request("POST", "/miniapp/questions/add", data=data)
+
+    # ========== 图片上传相关接口 ==========
+
+    def get_oss_signature(self) -> Dict[str, Any]:
+        """获取阿里云 OSS 上传签名
+
+        Returns:
+            {
+                "code": 1,
+                "data": {
+                    "id": "OSSAccessKeyId",
+                    "signature": "签名",
+                    "policy": "policy",
+                    "endpoint": "oss-cn-xxxx.aliyuncs.com",
+                    "dir": "qidong/"
+                }
+            }
+        """
+        return self._request("GET", "/miniapp/image/token")
+
+    def upload_image_to_oss(self, image_path: str, oss_dir: str = "/images/default") -> Dict[str, Any]:
+        """上传图片到阿里云 OSS
+
+        Args:
+            image_path: 本地图片路径
+            oss_dir: OSS 上的目录路径，默认 /images/default
+
+        Returns:
+            {
+                "code": 1,
+                "url": "/qidong/images/default/1234567890_123.jpg"
+            }
+            或失败时:
+            {
+                "code": -1,
+                "msg": "错误信息"
+            }
+        """
+        import os
+        import time
+        import random
+
+        # 1. 获取 OSS 签名
+        oss_result = self.get_oss_signature()
+        if oss_result.get("code") != 1:
+            return {"code": -1, "msg": f"获取 OSS 签名失败: {oss_result.get('msg', '未知错误')}"}
+
+        oss_data = oss_result.get("data", {})
+        required_fields = ["id", "signature", "policy", "endpoint", "dir"]
+        for field in required_fields:
+            if field not in oss_data:
+                return {"code": -1, "msg": f"OSS 签名缺少必要字段: {field}"}
+
+        # 2. 构建上传参数
+        file_ext = os.path.splitext(image_path)[1] or ".jpg"
+        timestamp = int(time.time() * 1000)
+        rand = random.randint(0, 999)
+        key = f"{oss_data['dir']}{oss_dir}/{timestamp}_{rand}{file_ext}"
+
+        # 3. 上传文件到 OSS
+        try:
+            with open(image_path, 'rb') as f:
+                files = {'file': f}
+                data = {
+                    'key': key,
+                    'OSSAccessKeyId': oss_data['id'],
+                    'signature': oss_data['signature'],
+                    'policy': oss_data['policy'],
+                    'success_action_status': '200'
+                }
+
+                upload_url = f"https://qidongkongjian.{oss_data['endpoint']}"
+                response = self.session.post(upload_url, data=data, files=files, timeout=60)
+
+                if response.status_code == 200:
+                    return {"code": 1, "url": f"/{key}"}
+                else:
+                    return {"code": -1, "msg": f"上传失败，HTTP状态码: {response.status_code}"}
+        except FileNotFoundError:
+            return {"code": -1, "msg": f"文件不存在: {image_path}"}
+        except Exception as e:
+            return {"code": -1, "msg": f"上传异常: {str(e)}"}
+
+    def upload_images_to_oss(self, image_paths: List[str], oss_dir: str = "/images/default") -> Dict[str, Any]:
+        """批量上传图片到阿里云 OSS
+
+        Args:
+            image_paths: 本地图片路径列表
+            oss_dir: OSS 上的目录路径，默认 /images/default
+
+        Returns:
+            {
+                "code": 1,
+                "urls": ["/qidong/images/default/123.jpg", ...]
+            }
+            或失败时:
+            {
+                "code": -1,
+                "msg": "错误信息",
+                "success_urls": [],  # 成功上传的URL
+                "failed_paths": []   # 失败的路径
+            }
+        """
+        if not image_paths:
+            return {"code": 1, "urls": []}
+
+        urls = []
+        failed_paths = []
+
+        for i, path in enumerate(image_paths):
+            result = self.upload_image_to_oss(path, oss_dir)
+            if result.get("code") == 1:
+                urls.append(result["url"])
+            else:
+                failed_paths.append({"path": path, "error": result.get("msg", "未知错误")})
+
+        if failed_paths and not urls:
+            return {
+                "code": -1,
+                "msg": f"所有图片上传失败，共 {len(failed_paths)} 张",
+                "success_urls": [],
+                "failed_paths": failed_paths
+            }
+
+        result = {"code": 1, "urls": urls}
+        if failed_paths:
+            result["partial_failed"] = True
+            result["failed_paths"] = failed_paths
+            result["msg"] = f"部分图片上传失败，成功 {len(urls)} 张，失败 {len(failed_paths)} 张"
+
+        return result
 
 
 # 便捷函数
