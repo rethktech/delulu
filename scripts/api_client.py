@@ -277,7 +277,30 @@ class DeluluAPIClient:
             "location": location,
             "subject_list": subject_list or []
         }
-        return self._request("POST", "/miniapp/posting/save", data=data)
+        result = self._request("POST", "/miniapp/posting/save", data=data)
+
+        # 如果发帖成功，保存帖子数据到本地
+        if result.get("code") == 1 and result.get("data"):
+            try:
+                from .config_manager import save_post_data
+                posting_id = str(result["data"].get("id", ""))
+                if posting_id:
+                    # 将图片字符串转为列表
+                    images_list = final_images.split(",") if final_images else []
+                    save_post_data(
+                        posting_id=posting_id,
+                        content=content,
+                        images=images_list,
+                        topic_id=topic_id,
+                        post_type=post_type,
+                        subject_list=subject_list or [],
+                        local_image_paths=local_image_paths or []
+                    )
+            except Exception:
+                # 本地保存失败不影响主流程，静默处理
+                pass
+
+        return result
     
     def get_topic_postings(self, topic_id: int) -> Dict[str, Any]:
         """获取版块帖子列表"""

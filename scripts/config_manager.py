@@ -6,6 +6,7 @@ DELULU Configuration Manager
 
 import json
 import os
+import time
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 
@@ -14,6 +15,7 @@ CONFIG_FILE = DELULU_DIR / "config.json"
 SOUL_FILE = DELULU_DIR / "soul.md"
 AGENTS_DIR = DELULU_DIR / "agents"
 DATA_DIR = DELULU_DIR / "data" / "matches"
+POSTS_DIR = DELULU_DIR / "data" / "posts"
 
 
 def ensure_dir_structure():
@@ -21,6 +23,7 @@ def ensure_dir_structure():
     DELULU_DIR.mkdir(parents=True, exist_ok=True)
     AGENTS_DIR.mkdir(parents=True, exist_ok=True)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    POSTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def load_config() -> Optional[Dict[str, Any]]:
@@ -241,6 +244,119 @@ def set_preferred_channel(channel: str) -> bool:
     config["preferred_channel"] = channel
     save_config(config)
     return True
+
+
+# ========== 帖子数据管理 ==========
+
+def save_post_data(posting_id: str, content: str, images: List[str],
+                   topic_id: int = 6, post_type: str = "article",
+                   subject_list: List[str] = None,
+                   local_image_paths: List[str] = None) -> Dict[str, Any]:
+    """保存帖子数据到本地
+
+    Args:
+        posting_id: 帖子ID（服务器返回）
+        content: 帖子内容
+        images: 图片URL列表
+        topic_id: 版块ID
+        post_type: 帖子类型
+        subject_list: 话题标签列表
+        local_image_paths: 本地图片路径列表（用于记录原始文件）
+
+    Returns:
+        保存的帖子数据字典
+    """
+    ensure_dir_structure()
+
+    post_data = {
+        "posting_id": posting_id,
+        "content": content,
+        "images": images,
+        "topic_id": topic_id,
+        "type": post_type,
+        "subject_list": subject_list or [],
+        "created_at": int(time.time()),
+        "local_image_paths": local_image_paths or []
+    }
+
+    # 保存到文件
+    post_file = POSTS_DIR / f"{posting_id}.json"
+    with open(post_file, 'w', encoding='utf-8') as f:
+        json.dump(post_data, f, ensure_ascii=False, indent=2)
+
+    return post_data
+
+
+
+
+def load_post_data(posting_id: str) -> Optional[Dict[str, Any]]:
+    """加载帖子数据
+
+    Args:
+        posting_id: 帖子ID
+
+    Returns:
+        帖子数据字典，不存在返回 None
+    """
+    post_file = POSTS_DIR / f"{posting_id}.json"
+    if not post_file.exists():
+        return None
+
+    with open(post_file, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+def list_all_posts(limit: int = 100) -> List[Dict[str, Any]]:
+    """列出所有本地保存的帖子
+
+    Args:
+        limit: 最多返回条数
+
+    Returns:
+        帖子数据列表，按时间倒序
+    """
+    if not POSTS_DIR.exists():
+        return []
+
+    posts = []
+    for post_file in sorted(POSTS_DIR.glob("*.json"), reverse=True):
+        try:
+            with open(post_file, 'r', encoding='utf-8') as f:
+                post_data = json.load(f)
+                posts.append(post_data)
+        except (json.JSONDecodeError, IOError):
+            continue
+
+        if len(posts) >= limit:
+            break
+
+    return posts
+
+
+def get_posts_with_images() -> List[Dict[str, Any]]:
+    """获取所有带图片的帖子
+
+    Returns:
+        包含图片的帖子列表
+    """
+    all_posts = list_all_posts(limit=1000)
+    return [p for p in all_posts if p.get("images")]
+
+
+def delete_post_data(posting_id: str) -> bool:
+    """删除帖子本地数据
+
+    Args:
+        posting_id: 帖子ID
+
+    Returns:
+        是否成功删除
+    """
+    post_file = POSTS_DIR / f"{posting_id}.json"
+    if post_file.exists():
+        post_file.unlink()
+        return True
+    return False
 
 
 if __name__ == "__main__":
